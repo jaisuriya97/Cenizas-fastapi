@@ -1,0 +1,30 @@
+name: Deploy FastAPI Application
+
+on: 
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      - name: Login to docker hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}     
+      - name: Build Docker Image
+        run: docker build -t jai092/cenizas-fastapi .
+      - name: Publish Image to docker hub
+        run: docker push jai092/cenizas-fastapi:latest 
+ 
+  deploy:
+    needs: build
+    runs-on: self-hosted 
+    steps:
+      - name: Pull image from docker hub
+        run: docker pull jai092/cenizas-fastapi:latest 
+      - name: Delete old container
+        run: docker rm -f cenizas-fastapi-container  
+      - name: Run Docker Container
+        run: docker run -d -p 8000:8000 --name cenizas-fastapi-container jai092/cenizas-fastapi:latest
